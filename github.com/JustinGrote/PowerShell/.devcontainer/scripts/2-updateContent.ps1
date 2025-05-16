@@ -23,8 +23,8 @@ Start-PSBootstrap -Scenario DotNet
 log 'Installing iputils (for the ping utility)'
 sudo apt install iputils-ping -y
 
-# Perform an initial build of PowerShell, this is needed so the "pwsh dev" and debug commands work on first startup
-log "Prebuilding PowerShell for Codespaces to $outputPath"
+# Perform an initial build of PowerShell, this is needed so the "pwsh dev" terminal and debug launch tasks are available on first run
+log "Building PowerShell"
 Start-PSBuild -UseNugetOrg -Clean
 
 # Prebuild more if in a codespace, otherwise leave this to the user to optimize local startup time
