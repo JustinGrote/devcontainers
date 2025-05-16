@@ -1,4 +1,7 @@
 #Docs: https://containers.dev/implementors/json_reference/#lifecycle-scripts
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
 . $PSScriptRoot/shared.ps1
 Import-Module -Force ./build.psm1
 
@@ -20,29 +23,17 @@ Start-PSBootstrap -Scenario DotNet
 log 'Installing iputils (for the ping utility)'
 sudo apt install iputils-ping -y
 
-# Perform a build if Github Codespaces prebuild, otherwise optimize to start quickly
-if ($ENV:CODESPACES) {
-    log "Prebuilding PowerShell for Codespaces to $outputPath"
-    Start-PSBuild -UseNugetOrg -Clean
-    log 'Prebuilding Tests'
-    dotnet build test/xUnit test/Modules
-}
+# Perform an initial build of PowerShell, this is needed so the "pwsh dev" and debug commands work on first startup
+log "Prebuilding PowerShell for Codespaces to $outputPath"
+Start-PSBuild -UseNugetOrg -Clean
 
-#Create a symbolic link from "debug" in the root folder to the publish folder for convenience.
-$publishPath = Split-Path (get-psoptions -DefaultToNew).Output
-if (-not $publishPath) {
-    New-Item -Path $publishPath -ItemType Directory -Force | Out-Null
-}
-$debugPath = Join-Path $PWD 'debug'
-if (-not (
-    (Test-Path $debugPath) -and
-    ((Get-Item $debugPath).LinkTarget -eq $publishPath)
-    )) {
-    #Remove the old link if it exists
-    if (Test-Path $debugPath) {
-        log "Removing existing debug symbolic link at $debugPath"
-        Remove-Item $debugPath -Force
-    }
-    log "Creating convenience link from $debugPath to $publishPath"
-    ln -s $publishPath $debugPath
+# Prebuild more if in a codespace, otherwise leave this to the user to optimize local startup time
+if ($ENV:CODESPACES) {
+    log 'Prebuilding Tests'
+    dotnet build test/xUnit
+    log 'Fetching Pester for Tests'
+    Restore-PSPester
+    log 'Build Testing Tools'
+    Publish-PSTestTools
+    Publish-CustomConnectionTestModule
 }

@@ -1,3 +1,5 @@
-FROM mcr.microsoft.com/devcontainers/dotnet:1-10.0-preview-noble
-# RUN "'test' > /tmp/test"
-# ADD ./scripts /tmp/devcontainerscripts
+ARG VARIANT=preview
+FROM mcr.microsoft.com/devcontainers/dotnet:${VARIANT}
+
+# This is a workaround for https://github.com/microsoft/vscode-remote-release/issues/10934
+ADD ./scripts /devcontainer/scripts
